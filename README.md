@@ -86,10 +86,10 @@ Menggunakan thread, socket, shared memory
 
 ##### Client Pembeli 
   - Mengambil Inputan dan mengirimnya ke server.
-  - Menerima dari server kemudian di print.
+  - Menerima dari server kemudian di tampilkan.
   - Mengosongkan memori variabel `buffer`.
     
-    ```
+    ```c
     char beli[10];
 
     while(1){
@@ -104,9 +104,122 @@ Menggunakan thread, socket, shared memory
     }
     return 0;
     }
+    ```
+
+##### Client Penjual
+
+- Input tambah.
+- Mengirim Inputan ke server.
+- menerima dari server kemudian di tampilkan.
+- mengosongkan memori variabel `buffer`.
 
 
-- 
+```c
+    char tambah[10];
+
+    while(1){
+        scanf("%s",tambah);
+        send(sock , tambah , strlen(tambah) , 0 );
+        valread = read( sock , buffer, 1024);
+        printf("%s\n",buffer );
+        memset(buffer,0,sizeof(buffer));
+        
+    }
+    return 0;
+}
+```
+
+##### Server Pembeli
+
+- Membuat Shared Memory dengan Server Penjual untuk `jumlah_barang`
+
+```c
+    key_t key = 1234;
+    int *jumlah_barang;
+
+    int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+    jumlah_barang = shmat(shmid, NULL, 0);
+
+    *jumlah_barang = 1;
+```
+
+- Menampilkan jumlah barang.
+- Menerima inputan dari client.
+- Membandingkan inputan dengan string 'beli'.
+- Jika sama dan jika jumlah barang lebih dari nol jumlah barang dikurang.
+- Kemudian mengirim string yang disimpan di `membeli`.
+- Jika jumlah sama dengan atau kurang dari 0 maka mengirim string yg disimpan di `habis`.
+
+```c
+
+    }
+    while(1){
+        printf("%d\n", *jumlah_barang);
+        valread = read( new_socket , buffer, 1024);
+        printf("%s\n",buffer );
+        if(strcmp(buffer,"beli")==0){
+            if(*jumlah_barang > 0){
+                *jumlah_barang = *jumlah_barang -1;
+                send(new_socket , membeli, strlen(membeli),0);
+            }
+            else {
+                send(new_socket, habis, strlen(habis),0);
+            }
+        }
+
+    }
+    return 0;
+}
+```
+
+##### Server Penjual
+- Thread untuk menapilkan jumlah barang tiap 5 detik sekali
+
+```c
+void* count(void* ptr){
+    int num;
+    while(1){
+        num = *jumlah_barang;
+        printf("Jumlah Barang sekarang : %d \n", num );
+        sleep(5);
+    }
+}
+```
+
+- Membuat Shared Memory 
+
+```c
+    int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+    jumlah_barang = shmat(shmid, NULL, 0);
+
+*jumlah_barang = 1;
+```
+- Menjalankan thread `count`
+```c
+int th = pthread_create(&(tid[1]),NULL,count,NULL);
+```
+- Menerima inputan dari client.
+- Membandingkan inputan dengan string 'tambah'.
+- Jika sama dan jika jumlah barang lebih dari nol jumlah barang ditambah 1.
+- Kemudian mengirim string ke client yang disimpan di `menambah`.
+- Jika string yang dikirim salah akan menampilkan pesan salah. 
+ 
+```c
+    while(1){
+
+        valread = read( new_socket , buffer, 1024);
+
+        if (strcmp(buffer,"tambah")==0){
+            *jumlah_barang = *jumlah_barang + 1;
+            send(new_socket , menambah , strlen(menambah) , 0 );
+            
+        }
+        else {
+            send(new_socket , salah , strlen(salah) , 0 );
+        }
+    }
+return 0;
+```
 
 ## Soal 3
 1. Disini digunakan 4 thread yaitu sebagai berikut
