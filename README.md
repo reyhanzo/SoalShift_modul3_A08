@@ -223,21 +223,173 @@ return 0;
 
 ## Soal 3
 1. Disini digunakan 4 thread yaitu sebagai berikut
-a. untuk mengecek status Agmal ketika sudah terpanggil 3 kali dan mendisable Agmal selama 10 detik jika Iraj terpanggil
-b. untuk mengecek status Iraj ketika sudah terpanggil 3 kali dan mendisable Iraj selama 10 detik jika Agmal terpanggil
-c. untuk menambahkan status wakeup Agmal sebanyak 15 point, dan memeriksa jika sudah mencapai lebih dari sama dengan 100, akan muncul pesan "Agmal terbangun, mereka bangun pagi dan berolahraga"
-d. untuk mengurangi status spirit Agmal sebanyak 20 point, dan memeriksa jika sudah mencapai kurang dari sama dengan 0, akan muncul pesan "Iraj ikut tidur, dan bangun kesiangan bersama Agmal"
-2. 
 
+a. untuk mengecek status Agmal ketika sudah terpanggil 3 kali dan mendisable Iraj selama 10 detik jika Iraj terpanggil
+
+b. untuk mengecek status Iraj ketika sudah terpanggil 3 kali dan mendisable Agmal selama 10 detik jika Agmal terpanggil
+
+c. untuk menambahkan status wakeup Agmal sebanyak 15 point, dan memeriksa jika sudah mencapai lebih dari sama dengan 100, akan muncul pesan "Agmal terbangun, mereka bangun pagi dan berolahraga"
+
+d. untuk mengurangi status spirit Agmal sebanyak 20 point, dan memeriksa jika sudah mencapai kurang dari sama dengan 0, akan muncul pesan "Iraj ikut tidur, dan bangun kesiangan bersama Agmal"
+```
+void *check_agmal(void *arg)
+{
+     while(1)
+     {
+	if(call_agmal==0)
+	{
+		sleep(10);
+	}
+    }
+}
+
+void *check_iraj(void *arg)
+{
+    while(1)
+	{
+	if(call_iraj==0)
+		{
+		sleep(10);
+		}
+	}
+}
+
+void *tambah_agmal(void *arg)
+{
+    wakeup_status+=15;
+    if(wakeup_status>=100)
+    {
+	printf("Agmal terbangun, mereka bangun pagi dan berolahraga\n");
+	flag=1;
+    }
+}
+
+void *kurang_iraj(void *arg)
+{
+    spirit_status-=20;
+    if(spirit_status<=0)
+    {
+	printf("Iraj ikut tidur, dan bangun kesiangan bersama Agmal\n");
+	flag=1;
+    }	
+}
+```
+2. di fungsi main berisi status wakeup dan status spirit awal, jika diantara kedua tersebut dipanggil, maka akan ada perubahan nilai (tambah atau kurang), jika diantara kedua panggilan dipanggil sebanyak 3 kali, maka Agmal atau Iraj bakal berhenti selama 10 detik
+```
+while(1)
+    {
+	if(flag==1)break;
+	printf("Agmal WakeUp_Status = %d\n", wakeup_status);
+	printf("Iraj Spirit_Status = %d\n", spirit_status);
+	scanf("%[^\n]s", message);
+	scanf("%c", &temp);
+	message_agmal = strcmp(message, "Agmal Ayo Bangun");
+	message_iraj = strcmp(message, "Iraj Ayo Tidur");
+
+	if(count_agmal==3)
+	{
+		call_agmal=0;
+	}
+	
+	if(message_agmal==0)
+	{
+		if(call_agmal==1)
+		{
+			pthread_create(&(tid1), NULL, tambah_agmal, NULL);
+			count_iraj++;
+			pthread_join(tid1, NULL);
+		}
+
+		else
+		{
+			printf("Iraj ayo Tidur disabled 10s\n");
+			call_agmal=1;
+			count_agmal=0;
+		}
+	}
+
+	if(count_iraj==3)
+	{
+		call_iraj=0;
+	}
+
+	if(message_iraj==0)
+	{
+		if(call_iraj==1)
+		{
+			pthread_create(&(tid2), NULL, kurang_iraj, NULL);
+			count_agmal++;
+			pthread_join(tid2, NULL);
+		}
+
+		else
+		{
+			printf("Agmal Ayo Bangun disabled 10s\n");
+			call_iraj=1;
+			count_iraj=0;
+		}
+	}
+	message[0]='\0';
+    }
+```
 
 ## Soal 4
 1. Disini digunakan 4 thread dalam menjalankan program ini, 2 thread pertama digunakan untuk membuat file directory FolderProses dan membuat text berisi laporan status proses, dan kedua thread tersebut harus dijalankan secara bersamaan.
+
 1a. Untuk membuat FolderProses1 (folder) dan SimpanProses1.txt (file proses)
+
 1b. Untuk membuat FoderProses2 dan simpanProses2.txt
+```
+void* proses1(){
+	system("mkdir -p ~/Documents/FolderProses1");
+	system("ps -aux|head -10>>~/Documents/FolderProses1/SimpanProses1.txt");
+}
+
+void* proses2(){
+	system("mkdir -p ~/Documents/FolderProses2");
+	system("ps -aux|head -10>>~/Documents/FolderProses2/SimpanProses2.txt");
+}
+```
 
 2. 2 thread berikutnya digunakan untuk membuat zip dan ekstrak zip tersebut, kedua thread tersebut dilakukan secara bersamaan.
+
 2a. Untuk zip file SimpanProses1.txt menjadi KompresProses1.zip dan mengestrak kembali menjadi SimpanProses1.txt di dalam folder Documents
+
 2b. Untuk zip file SimpanProses2.txt menjadi KompresProses2.zip dan mengestrak kembali menjadi SimpanProses2.txt di dalam folder Documents
+```
+void* zip1(){
+	system("zip -j ~/Documents/FolderProses1/KompresProses1.zip ~/Documents/FolderProses1/SimpanProses1.txt");
+	system("rm ~/Documents/FolderProses1/SimpanProses1.txt");
+	sleep(15);
+		printf("Menunggu 15 detik untuk mengekstrak kembali\n");
+		system("unzip ~/Documents/FolderProses1/KompresProses1.zip -d ~/Documents");
+		system("rm ~/Documents/FolderProses1/KompresProses1.zip");
+}
 
+void* zip2(){
+	system("zip -j ~/Documents/FolderProses2/KompresProses2.zip ~/Documents/FolderProses2/SimpanProses2.txt");
+	system("rm ~/Documents/FolderProses2/SimpanProses2.txt");
+	sleep(15);
+		printf("Menunggu 15 detik untuk mengekstrak kembali\n");
+		system("unzip ~/Documents/FolderProses2/KompresProses2.zip -d ~/Documents");
+		system("rm ~/Documents/FolderProses2/KompresProses2.zip");
+}
+```
 
+3. Untuk fungsi main, hanya multithread dari thread yg dibuat untuk mendukung program ini
+```
+int main()
+{
+	pthread_create(&(tid[0]),NULL,&proses1,NULL);
+	pthread_join(tid[0],NULL);
+	pthread_create(&(tid[1]),NULL,&proses2,NULL);
+	pthread_join(tid[1],NULL);
+	pthread_create(&(tid[0]),NULL,&zip1,NULL);
+	pthread_create(&(tid[1]),NULL,&zip2,NULL);
+	pthread_join(tid[0],NULL);
+	pthread_join(tid[1],NULL);
+}
+```
 ## Soal 5
+
+Masih belum ada deskripsi, karena revisi
