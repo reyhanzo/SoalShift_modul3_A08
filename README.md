@@ -89,7 +89,14 @@ d. untuk mengurangi status spirit Agmal sebanyak 20 point, dan memeriksa jika su
 
 1b. Untuk membuat FoderProses2 dan simpanProses2.txt
 ```
-
+void* proses1(){
+	system("mkdir -p ~/Documents/FolderProses1");
+	system("ps -aux|head -10>>~/Documents/FolderProses1/SimpanProses1.txt");
+}
+void* proses2(){
+	system("mkdir -p ~/Documents/FolderProses2");
+	system("ps -aux|head -10>>~/Documents/FolderProses2/SimpanProses2.txt");
+}
 ```
 
 2. 2 thread berikutnya digunakan untuk membuat zip dan ekstrak zip tersebut, kedua thread tersebut dilakukan secara bersamaan.
@@ -98,12 +105,38 @@ d. untuk mengurangi status spirit Agmal sebanyak 20 point, dan memeriksa jika su
 
 2b. Untuk zip file SimpanProses2.txt menjadi KompresProses2.zip dan mengestrak kembali menjadi SimpanProses2.txt di dalam folder Documents
 ```
+void* zip1(){
+	system("zip -j ~/Documents/FolderProses1/KompresProses1.zip ~/Documents/FolderProses1/SimpanProses1.txt");
+	system("rm ~/Documents/FolderProses1/SimpanProses1.txt");
+	sleep(15);
+		printf("Menunggu 15 detik untuk mengekstrak kembali\n");
+		system("unzip ~/Documents/FolderProses1/KompresProses1.zip -d ~/Documents");
+		system("rm ~/Documents/FolderProses1/KompresProses1.zip");
+}
 
+void* zip2(){
+	system("zip -j ~/Documents/FolderProses2/KompresProses2.zip ~/Documents/FolderProses2/SimpanProses2.txt");
+	system("rm ~/Documents/FolderProses2/SimpanProses2.txt");
+	sleep(15);
+		printf("Menunggu 15 detik untuk mengekstrak kembali\n");
+		system("unzip ~/Documents/FolderProses2/KompresProses2.zip -d ~/Documents");
+		system("rm ~/Documents/FolderProses2/KompresProses2.zip");
+}
 ```
 
 3. Untuk di fungsi main, hanya menggunakan multi threading saja
 ```
-
+int main()
+{
+	pthread_create(&(tid[0]),NULL,&proses1,NULL);
+	pthread_join(tid[0],NULL);
+	pthread_create(&(tid[1]),NULL,&proses2,NULL);
+	pthread_join(tid[1],NULL);
+	pthread_create(&(tid[0]),NULL,&zip1,NULL);
+	pthread_create(&(tid[1]),NULL,&zip2,NULL);
+	pthread_join(tid[0],NULL);
+	pthread_join(tid[1],NULL);
+}
 ```
 
 ## Soal 5
